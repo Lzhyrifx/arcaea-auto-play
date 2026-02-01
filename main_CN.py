@@ -7,6 +7,8 @@ import sys
 from pathlib import Path
 from tkinter import Tk
 from tkinter.filedialog import askopenfilename
+
+from algo.algo_base import TouchAction
 from chart import Chart
 from solve import solve, CoordConv
 from control import DeviceController
@@ -21,6 +23,7 @@ DEFAULT_CONFIG = {
         "bottom_right": (2376, 1350),
         "chart_path": "",
         "fine_tune_step": 10,
+        "retry_delay": 6.0,
     }
 }
 
@@ -29,6 +32,7 @@ base_delay = 0.0
 time_lock = threading.Lock()
 input_listener_active = False
 automation_started = False
+
 
 def choose_aff_file():
     root = Tk()
@@ -178,14 +182,16 @@ def quick_edit_params(current_config):
     print("[1] 编辑坐标")
     print("[2] 谱面路径")
     print("[3] 微调设置")
-    
+
+
     if has_designant_in_chart:
         print("[4] 配置是否触控蚂蚁异象")
     
     print("按对应数字键编辑，其他键跳过...")
 
     key = wait_key(5)
-    
+
+
     if key == '1':
         print("\n请按顺序设置四个坐标（按回车保持当前值）")
         current_config["global"]["bottom_left"] = input_coord("底部轨道左坐标 (x,y)", current_config["global"]["bottom_left"])
@@ -410,13 +416,20 @@ def run_automation_with_6k(current_config):
     start_input_listener(current_config)
     
     designant_choice = current_config["global"].get("designant_choice")
-    
+    retry_delay = current_config["global"].get("retry_delay", 1.0)
+
     print("\n准备就绪，按两次回车键以开始...")
     flush_input()
     input()
-    
+    time.sleep(0.5)
+    ctl.tap(ctl.device_width // 2, ctl.device_height // 2)
+    print("点击重试")
+    time.sleep(retry_delay)
+
     automation_started = True
-    
+
+
+
     start_time = time.time() + base_delay
     print('[INFO] 自动打歌启动')
     print('[INFO] 微调功能已启用，可在下方输入命令进行微调')
